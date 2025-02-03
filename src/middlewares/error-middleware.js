@@ -1,20 +1,23 @@
-const notFoundError = (_, _res, next) => {
-    const error = new Error();
-    error.status = 404;
-    next(error);
+const notFoundError = (req, res, next) => {
+    if (!res.headersSent) {
+        res.status(404).json({ error: "Rota não encontrada" });
+    } else {
+        next();
+    }
 };
 
-const internalServerError = (error, _, res, next) => {
-    if (error.status === 404) {
-        res.status(404).send();
-    } else {
-        res.status(500).send({
-            error: error.name,
-            message: error.message,
-            stack: error.stack
+const internalServerError = (error, req, res, next) => {
+    console.error("Erro interno:", error);
+    
+    if (!res.headersSent) {
+        res.status(error.status || 500).json({
+            error: error.name || "InternalServerError",
+            message: error.message || "Ocorreu um erro no servidor",
+            stack: process.env.NODE_ENV === "production" ? undefined : error.stack
         });
     }
-    next(error);
+
+    next();
 };
 
 module.exports = {
